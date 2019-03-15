@@ -76,7 +76,7 @@ jobs:
           name: Lint via eslint
           command: npm run lint
 
-  unit_test:
+  unit_tests:
     executor: helix
     steps:
       - setup_fs
