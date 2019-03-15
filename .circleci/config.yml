@@ -13,6 +13,17 @@ references:
     attach_workspace:
       at: *workspace_root
 
+commands:
+  setup_fs:
+    description: "Attaches workspace, checks out code and restores node_modules"
+    steps:
+      - *attach_workspace
+      - checkout
+      - restore_cache:
+          keys:
+          - *js_deps_cache_key
+          - *js_deps_backup_cache_key
+
 orbs:
   sauce-connect: saucelabs/sauce-connect@volatile
 executors:
@@ -23,17 +34,10 @@ jobs:
   install:
     executor: helix
     steps:
-      - *attach_workspace
-      - checkout
-      - restore_cache:
-          keys:
-          - *js_deps_cache_key
-          - *js_deps_backup_cache_key
-
+      - setup_fs
       - run:
           name: Installing Dependencies
           command: npm install
-
       - save_cache:
           paths:
             - node_modules
@@ -42,15 +46,7 @@ jobs:
   build:
     executor: helix
     steps:
-      # TODO: can the next three steps be wrapped up somewhere to DRY this up a
-      # bit?
-      - checkout
-      - *attach_workspace
-      - restore_cache:
-         keys:
-          - *js_deps_cache_key
-          - *js_deps_backup_cache_key
-
+      - setup_fs
       - run:
           name: Build helix
           command: npm run build
@@ -68,18 +64,14 @@ jobs:
   test:
     executor: helix
     steps:
-      - checkout
-      - *attach_workspace
-      - restore_cache:
-          keys:
-          - *js_deps_cache_key
-          - *js_deps_backup_cache_key
+      - setup_fs
       - run:
           name: Restore built helix site
           command: |
             set -exu
             mkdir -p /tmp/workspace/.hlx
-            mv /tmp/workspace/.hlx .
+            mkdir -p .hlx
+            mv /tmp/workspace/.hlx/* .hlx/.
 
       # Open up the Sauce Labs tunnel
       - sauce-connect/install:
