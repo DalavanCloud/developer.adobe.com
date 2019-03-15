@@ -29,7 +29,7 @@ commands:
             set -exu
             mkdir -p /tmp/workspace/.hlx
             mkdir -p .hlx
-            mv /tmp/workspace/.hlx/* .hlx/.
+            mv /tmp/workspace/.hlx/* .hlx/. || true
 
 orbs:
   sauce-connect: saucelabs/sauce-connect@volatile
