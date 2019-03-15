@@ -1,4 +1,18 @@
 version: 2.1
+
+# for easier referencing in the rest of the config
+references:
+  js_deps_cache_key: &js_deps_cache_key
+    v1-dependencies-{{ checksum "package-lock.json" }}
+  js_deps_backup_cache_key: &js_deps_backup_cache_key
+    v1-dependencies-
+  # workspace saves files across different `jobs` in a single `workflow`
+  workspace_root: &workspace_root
+    /tmp/workspace
+  attach_workspace: &attach_workspace
+    attach_workspace:
+      at: *workspace_root
+
 orbs:
   sauce-connect: saucelabs/sauce-connect@volatile
 executors:
@@ -9,66 +23,85 @@ jobs:
   install:
     executor: helix
     steps:
-        - checkout
+      - *attach_workspace
+      - checkout
+      - restore_cache:
+          keys:
+          - *js_deps_cache_key
+          - *js_deps_backup_cache_key
 
-        # Download and cache dependencies
-        - restore_cache:
-            keys:
-            - v1-dependencies-{{ checksum "package-lock.json" }}
-            - v1-dependencies-
+      - run:
+          name: Installing Dependencies
+          command: npm install
 
-        - run:
-            name: Installing Dependencies
-            command: npm install
-
-        - save_cache:
-            paths:
-              - node_modules
-            key: v1-dependencies-{{ checksum "package-lock.json" }}
+      - save_cache:
+          paths:
+            - node_modules
+          key: *js_deps_cache_key
 
   build:
     executor: helix
     steps:
-        - checkout
-        - restore_cache:
-            keys:
-            - v1-dependencies-{{ checksum "package-lock.json" }}
-            - v1-dependencies-
+      # TODO: can the next three steps be wrapped up somewhere to DRY this up a
+      # bit?
+      - checkout
+      - *attach_workspace
+      - restore_cache:
+         keys:
+          - *js_deps_cache_key
+          - *js_deps_backup_cache_key
 
-        - run:
-            name: Build helix
-            command: npm run build
+      - run:
+          name: Build helix
+          command: npm run build
+      - run:
+          name: Persist built helix site
+          command: |
+            set -exu
+            mkdir -p /tmp/workspace/.hlx
+            mv .hlx/* /tmp/workspace/.hlx/.
+      - persist_to_workspace:
+          root: *workspace_root
+          paths:
+            - .hlx
 
   test:
     executor: helix
     steps:
-        - checkout
-        - restore_cache:
-            keys:
-            - v1-dependencies-{{ checksum "package-lock.json" }}
-            - v1-dependencies-
+      - checkout
+      - *attach_workspace
+      - restore_cache:
+          keys:
+          - *js_deps_cache_key
+          - *js_deps_backup_cache_key
+      - run:
+          name: Restore built helix site
+          command: |
+            set -exu
+            mkdir -p /tmp/workspace/.hlx
+            mv /tmp/workspace/.hlx .
 
-        # Open up the Sauce Labs tunnel
-        - sauce-connect/install:
-            version: 4.5.3
-        - sauce-connect/open_tunnel:
-            # NOTE: the env vars are hardcoded as SAUCELABS_USER and
-            # SAUCELABS_KEY
-            tunnel_identifier: ${SAUCELABS_USER}
+      # Open up the Sauce Labs tunnel
+      - sauce-connect/install:
+          version: 4.5.3
+      - sauce-connect/open_tunnel:
+          # NOTE: the env vars are hardcoded as SAUCELABS_USER and
+          # SAUCELABS_KEY
+          tunnel_identifier: ${SAUCELABS_USER}
 
-        # run tests!
-        - run:
-            name: prepare test git user
-            command: git config --global user.email "you@example.com" && git config --global user.name "CircleCi Build"
-        - run:
-            name: Test
-            command: npm run ci
+      # run tests!
+      - run:
+          name: prepare test git user
+          command: git config --global user.email "you@example.com" && git config --global user.name "CircleCi Build"
+      - run:
+          name: Test
+          command: npm run ci
 
-        - run:
-            name: Close Sauce Tunnel
-            command: |
-              pkill sc
-              sleep 5 # shutting down the tunnel usually takes a few second, lets let it clean up gracefully
+      - run:
+          name: Close Sauce Tunnel
+          command: |
+            pkill sc
+            sleep 5 # shutting down the tunnel usually takes a few second, lets let it clean up gracefully
 
 workflows:
   version: 2.1

@@ -132,9 +132,10 @@ pull requests.
 Outline of a continuous delivery (CD) pipeline implementation:
 
 1. build the site and ensure there are no errors (`hlx clean && hlx build`)
-2. run the "full" test suite against a _local_ instance of the site, which includes:
-    - run linter and [unit tests](#unit-tests) (`npm test`)
-    - run [end-to-end tests](#end-to-end-tests) (`npm run test:e2e`)
+2. run the "full" test suite against a _local_ instance of the site, which includes running in parallel:
+    - linter (`npm run lint`)
+    - [unit tests](#unit-tests) (`npm run test:unit`)
+    - [end-to-end tests](#end-to-end-tests) (`npm run test:e2e`)
     - *TODO*: [performance testing](#performance-testing) should be added here
     - *TODO*: [link and image checking](#link-and-image-checking) should be added here
     - ⚠️ if any of the above fail, we abort deployment.
