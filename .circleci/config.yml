@@ -23,6 +23,13 @@ commands:
           keys:
           - *js_deps_cache_key
           - *js_deps_backup_cache_key
+      - run:
+          name: Restore built helix site
+          command: |
+            set -exu
+            mkdir -p /tmp/workspace/.hlx
+            mkdir -p .hlx
+            mv /tmp/workspace/.hlx/* .hlx/.
 
 orbs:
   sauce-connect: saucelabs/sauce-connect@volatile
@@ -61,18 +68,26 @@ jobs:
           paths:
             - .hlx
 
-  test:
+  lint:
     executor: helix
     steps:
       - setup_fs
       - run:
-          name: Restore built helix site
-          command: |
-            set -exu
-            mkdir -p /tmp/workspace/.hlx
-            mkdir -p .hlx
-            mv /tmp/workspace/.hlx/* .hlx/.
+          name: Lint via eslint
+          command: npm run lint
 
+  unit_test:
+    executor: helix
+    steps:
+      - setup_fs
+      - run:
+          name: Run unit tests
+          command: npm run test:unit
+
+  end_to_end_tests:
+    executor: helix
+    steps:
+      - setup_fs
       # Open up the Sauce Labs tunnel
       - sauce-connect/install:
           version: 4.5.3
@@ -80,15 +95,9 @@ jobs:
           # NOTE: the env vars are hardcoded as SAUCELABS_USER and
           # SAUCELABS_KEY
           tunnel_identifier: ${SAUCELABS_USER}
-
-      # run tests!
       - run:
-          name: prepare test git user
-          command: git config --global user.email "you@example.com" && git config --global user.name "CircleCi Build"
-      - run:
-          name: Test
-          command: npm run ci
-
+          name: Run end to end tests
+          command: npm run test:e2e-helix-sauce -- --baseUrl http://localhost:3000
       - run:
           name: Close Sauce Tunnel
           command: |
@@ -103,6 +112,12 @@ workflows:
       - build:
           requires:
             - install
-      - test:
+      - lint:
+          requires:
+            - build
+      - unit_tests:
+          requires:
+            - build
+      - end_to_end_tests:
           requires:
             - build

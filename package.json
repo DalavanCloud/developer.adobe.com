@@ -15,7 +15,6 @@
     "test:e2e-aem-local": "wdio test/e2e/aem/local-wdio.conf.js",
     "test:e2e-aem-sauce": "wdio test/e2e/aem/sauce-wdio.conf.js",
     "test": "npm run lint && npm run test:unit && npm run test:e2e-helix-local",
-    "ci": "npm run lint && npm run test:unit && npm run test:e2e-helix-sauce -- --baseUrl http://localhost:3000",
     "build": "hlx clean && hlx build",
     "deploy": "npm run build && hlx deploy --no-auto && hlx publish",
     "start": "hlx up --host adobedevsite.helix-demo.xyz"
