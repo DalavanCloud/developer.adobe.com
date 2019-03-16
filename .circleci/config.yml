@@ -104,9 +104,25 @@ jobs:
             pkill sc
             sleep 5 # shutting down the tunnel usually takes a few second, lets let it clean up gracefully
 
+  deploy:
+    executor: helix
+    steps:
+      - setup_fs
+      - run:
+          name: hlx deploy
+          command: npm run deploy
+
+  post_deploy_tests:
+    executor: helix
+    steps:
+      - setup_fs
+      - run:
+          name: Run post-deploy tests
+          command: npm run test:post-deploy
+
 workflows:
   version: 2.1
-  continously_integrate:
+  continously_deploy:
     jobs:
       - install
       - build:
@@ -121,3 +137,17 @@ workflows:
       - end_to_end_tests:
           requires:
             - build
+      - deploy:
+          requires:
+            - lint
+            - unit_tests
+            - end_to_end_tests
+          filters:
+            branches:
+              only: master
+      - post_deploy_tests:
+          requires:
+            - deploy
+          filters:
+            branches:
+              only: master
