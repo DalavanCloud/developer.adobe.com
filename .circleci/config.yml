@@ -29,7 +29,8 @@ commands:
             set -exu
             mkdir -p /tmp/workspace/.hlx
             mkdir -p .hlx
-            mv /tmp/workspace/.hlx/* .hlx/. || true
+            [ -d /tmp/workspace/.hlx/build ] && mv -f /tmp/workspace/.hlx/build .hlx/. || true
+            [ -f /tmp/workspace/.hlx/helix-config.yaml ] && mv -f /tmp/workspace/helix-config.yaml . || true
 
 orbs:
   sauce-connect: saucelabs/sauce-connect@volatile
@@ -111,6 +112,16 @@ jobs:
       - run:
           name: hlx deploy
           command: npm run deploy
+      - run:
+          name: Persist post-deploy helix-config
+          command: |
+            set -exu
+            mkdir -p /tmp/workspace
+            cp helix-config.yaml /tmp/workspace/.
+      - persist_to_workspace:
+          root: *workspace_root
+          paths:
+            - helix-config.yaml
 
   post_deploy_tests:
     executor: helix
@@ -119,6 +130,22 @@ jobs:
       - run:
           name: Run post-deploy tests
           command: npm run test:post-deploy
+
+  commit_deploy_tag:
+    executor: helix
+    steps:
+      - setup_fs
+      - run:
+          name: Commit helix config to master
+          command: |
+            git config user.name "dxbot"
+            git config user.email "dxbot@adobe.com"
+            git stash
+            git checkout master
+            git pull origin --tags master
+            git stash pop
+            git commit -am "🐣 enshrining config post-deploy [ci skip]" 
+            git push origin master
 
 workflows:
   version: 2.1
@@ -148,6 +175,12 @@ workflows:
       - post_deploy_tests:
           requires:
             - deploy
+          filters:
+            branches:
+              only: master
+      - commit_deploy_tag:
+          requires:
+            - post_deploy_tests
           filters:
             branches:
               only: master
