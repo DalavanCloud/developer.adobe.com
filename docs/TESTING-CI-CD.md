@@ -161,15 +161,9 @@ Outline of a continuous delivery (CD) pipeline implementation:
 5. commit the config and ensure CI skips it (`git commit -am '⚙️ saving deploy
     changes [ci skip]`)
 6. publish the changes to Fastly (`hlx publish --remote`)
-    - *TODO*: I _think_, but am not sure, that publishing a branch (PR) would
-        work differently than publishing `master` to either staging or
-        production [environments](#environments). I _think_, but am not sure,
-        that auto-generated strains are involved when publishing a non-master
-        branch (PR). Let's clarify and ensure we have the correct command in
-        each case.
 7. ensure everything is as expected by running the following in the deployed
    [environment](#environments):
-    - run [end-to-end tests](#end-to-end-tests) (`npm run test:e2e`)
+    - run [end-to-end tests](#end-to-end-tests) (`npm run test:e2e-helix-sauce`)
     - *TODO*: [performance testing](#performance-testing) should be added here
     - *TODO*: [link and image checking](#link-and-image-checking) should be added here
     - ⚠️ if any of the above fail, we abort deployment and rollback (rollback to

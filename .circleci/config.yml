@@ -85,7 +85,7 @@ jobs:
           name: Run unit tests
           command: npm run test:unit
 
-  end_to_end_tests:
+  end_to_end_localhost_tests:
     executor: helix
     steps:
       - setup_fs
@@ -113,6 +113,9 @@ jobs:
           name: hlx deploy
           command: npm run deploy
       - run:
+          name: Run post-deploy tests
+          command: npm run test:post-deploy
+      - run:
           name: Persist post-deploy helix-config
           command: |
             set -exu
@@ -123,15 +126,7 @@ jobs:
           paths:
             - helix-config.yaml
 
-  post_deploy_tests:
-    executor: helix
-    steps:
-      - setup_fs
-      - run:
-          name: Run post-deploy tests
-          command: npm run test:post-deploy
-
-  commit_deploy_tag:
+  commit_and_publish:
     executor: helix
     steps:
       - setup_fs
@@ -144,8 +139,19 @@ jobs:
             git checkout master
             git pull origin --tags master
             git stash pop
-            git commit -am "🐣 enshrining config post-deploy [ci skip]" 
+            git commit -am "🐣 enshrining config post-deploy [ci skip]"
             git push origin master
+      - run:
+          name: hlx publish
+          command: npm run publish
+
+  end_to_end_production_tests:
+    executor: helix
+    steps:
+      - setup_fs
+      - run:
+          name: Run end to end tests on sauce against production site
+          command: npm run test:e2e-helix-sauce
 
 workflows:
   version: 2.1
@@ -161,26 +167,27 @@ workflows:
       - unit_tests:
           requires:
             - build
-      - end_to_end_tests:
+      - end_to_end_localhost_tests:
           requires:
             - build
       - deploy:
           requires:
             - lint
             - unit_tests
-            - end_to_end_tests
+            - end_to_end_localhost_tests
           filters:
             branches:
               only: master
-      - post_deploy_tests:
+      - commit_and_publish:
           requires:
             - deploy
           filters:
             branches:
               only: master
-      - commit_deploy_tag:
+      - end_to_end_production_tests:
           requires:
-            - post_deploy_tests
+            - commit_and_publish
           filters:
             branches:
               only: master
+
