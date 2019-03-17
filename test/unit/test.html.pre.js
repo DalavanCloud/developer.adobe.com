@@ -9,233 +9,31 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-// /* global describe, it */
-// const assert = require('assert');
-// const nock = require('nock');
-// const defaultPre = require('../src/html.pre.js');
+const assert = require('assert');
+const html = require('../../src/html.pre.js');
 
-// const loggerMock = {
-//   log: () => {},
-//   debug: () => {},
-//   info: () => {},
-//   warn: () => {},
-//   error: () => {},
-//   silly: () => {},
-// };
-
-// describe('Testing pre requirements for main function', () => {
-//   it('Exports pre', () => {
-//     assert.ok(defaultPre.pre);
-//   });
-
-//   it('pre is a function', () => {
-//     assert.equal('function', typeof defaultPre.pre);
-//   });
-// });
-
-// describe('Testing removeFirstTitle', () => {
-//   it('Empty children', () => {
-//     const children = [];
-//     const output = defaultPre.removeFirstTitle(children, loggerMock);
-//     assert.deepEqual(output, []);
-//   });
-
-//   it('Remove first child', () => {
-//     const children = ['a', 'b', 'c'];
-//     const output = defaultPre.removeFirstTitle(children, loggerMock);
-//     assert.deepEqual(output, ['b', 'c']);
-//   });
-// });
-
-// describe('Testing fetchCommitsHistory', () => {
-//   it('Collect commits', async () => {
-//     const expectedCommits = {
-//       p1: 1,
-//       p2: 2,
-//     };
-//     nock('http://localhost').get('/repos/owner/repo/commits?path=resourcePath.md&sha=ref').reply(200, expectedCommits);
-
-//     const metadata = await defaultPre.fetchCommitsHistory('http://localhost/',
-//       'owner', 'repo', 'ref', 'resourcePath.md', loggerMock);
-
-//     assert.deepEqual(metadata, expectedCommits);
-//   });
-// });
-
-// describe('Testing extractCommittersFromCommitsHistory', () => {
-//   it('Extract committers', () => {
-//     const output = defaultPre.extractCommittersFromCommitsHistory([{
-//       author: {
-//         avatar_url: 'a1_url',
-//       },
-//       commit: {
-//         author: {
-//           email: 'a1_email',
-//           name: 'a1',
-//         },
-//       },
-//     }, {
-//       author: {
-//         avatar_url: 'a2_url',
-//       },
-//       commit: {
-//         author: {
-//           email: 'a2_email',
-//           name: 'a2',
-//         },
-//       },
-//     }, {
-//       author: {
-//         avatar_url: 'a2_url',
-//       },
-//       commit: {
-//         author: {
-//           email: 'a2_email_different',
-//           name: 'a2_different',
-//         },
-//       },
-//     }], loggerMock);
-
-//     assert.deepEqual(output, [{
-//       avatar_url: 'a1_url',
-//       display: 'a1 | a1_email',
-//     }, {
-//       avatar_url: 'a2_url',
-//       display: 'a2 | a2_email',
-//     }]);
-//   });
-// });
-
-// describe('Testing extractLastModifiedFromCommitsHistory', () => {
-//   it('Extract last modified', () => {
-//     const output = defaultPre.extractLastModifiedFromCommitsHistory([{
-//       commit: {
-//         author: {
-//           name: 'a1',
-//           date: '01 Jan 2018 00:01:00 GMT',
-//         },
-//       },
-//     }, {
-//       author: {
-//         commit: {
-//           name: 'a2',
-//           date: '01 Jan 2018 00:00:00 GMT',
-//         },
-//       },
-//     }], loggerMock);
-
-//     assert.equal(output.raw, '01 Jan 2018 00:01:00 GMT');
-//   });
-// });
-
-// describe('Testing computeNavPath', () => {
-//   it('Compute dev nav path', () => {
-//     const output = defaultPre.computeNavPath(
-//       true,
-//       loggerMock,
-//     );
-
-//     assert.deepEqual(output, '/SUMMARY');
-//   });
-
-//   it('Compute prod nav path', () => {
-//     const output = defaultPre.computeNavPath(
-//       false,
-//       loggerMock,
-//     );
-
-//     assert.deepEqual(output, 'https://www.project-helix.io/SUMMARY');
-//   });
-// });
-
-// describe('Testing assembleEditUrl', () => {
-//   it('Assemble edit URL', () => {
-//     const output = defaultPre.assembleEditUrl(
-//       'test-owner',
-//       'test-repo',
-//       'test-branch',
-//       '/test-file.md',
-//       loggerMock,
-//     );
-
-//     assert.equal(output, 'https://github.com/test-owner/test-repo/edit/test-branch/test-file.md');
-//   });
-// });
-
-// describe('Testing createTOC', () => {
-//   it('Create 2-level TOC from HTML with various headings', () => {
-//     const originalChildren = [
-//       '<h2>Heading 2</h2>',
-//       '<p>Some text</p>',
-//       '<h3>Heading 3</h3>',
-//       '<h4>Heading 4</h4>',
-//     ];
-//     const expectedChildren = [
-//       '<h2 id="0_Heading%202">Heading 2</h2>',
-//       '<p>Some text</p>',
-//       '<h3>Heading 3</h3>',
-//       '<h4>Heading 4</h4>',
-//     ];
-//     const expectedTOC = [
-//       '<li class="level-2"><a href="#0_Heading%202">Heading 2</a></li>',
-//     ];
-
-//     const [children, toc] = defaultPre.createTOC(originalChildren, 2, loggerMock);
-
-//     assert.deepEqual(toc, expectedTOC);
-//     assert.deepEqual(children, expectedChildren);
-//   });
-
-//   it('Create 3-level TOC from HTML with various headings', () => {
-//     const originalChildren = [
-//       '<h2>Heading 2</h2>',
-//       '<p>Some text</p>',
-//       '<h3>Heading 3</h3>',
-//       '<h4>Heading 4</h4>',
-//     ];
-//     const expectedChildren = [
-//       '<h2 id="0_Heading%202">Heading 2</h2>',
-//       '<p>Some text</p>',
-//       '<h3 id="2_Heading%203">Heading 3</h3>',
-//       '<h4>Heading 4</h4>',
-//     ];
-//     const expectedTOC = [
-//       '<li class="level-2"><a href="#0_Heading%202">Heading 2</a></li>',
-//       '<li class="level-3"><a href="#2_Heading%203">Heading 3</a></li>',
-//     ];
-//     const [children, toc] = defaultPre.createTOC(originalChildren, 3, loggerMock);
-
-//     assert.deepEqual(toc, expectedTOC);
-//     assert.deepEqual(children, expectedChildren);
-//   });
-
-//   it('Create TOC from HTML without headings', () => {
-//     const originalChildren = [
-//       '<p>Some text</p>',
-//       '<p>Some more text</p>',
-//       '<p>Even more text</p>',
-//     ];
-//     const expectedTOC = [];
-
-//     const [children, toc] = defaultPre.createTOC(originalChildren, 3, loggerMock);
-
-//     assert.deepEqual(toc, expectedTOC);
-//     assert.deepEqual(children, originalChildren);
-//   });
-
-//   it('Create TOC from null and empty array', () => {
-//     // null check
-//     const nullToc = defaultPre.createTOC(null, 3, loggerMock);
-
-//     assert.equal(nullToc, null);
-
-//     // empty array check
-//     const originalChildren = [];
-//     const expectedTOC = [];
-
-//     const [children, toc] = defaultPre.createTOC(originalChildren, 3, loggerMock);
-
-//     assert.deepEqual(toc, expectedTOC);
-//     assert.deepEqual(children, originalChildren);
-//   });
-// });
+describe('html.pre.js', () => {
+  it('should dispatch to default html if there is no root path', () => {
+    const payload = {
+      request: {
+        params: {},
+        headers: {},
+      },
+      dispatch: {},
+    };
+    html.pre(payload, { request: { params: {} } });
+    assert.equal(payload.dispatch.url, '/index.default.html');
+  });
+  it('should dispatch to docs html if docs is in root path', () => {
+    const payload = {
+      request: {
+        params: {},
+        headers: {},
+        path: '/index.html',
+      },
+      dispatch: {},
+    };
+    html.pre(payload, { request: { params: { rootPath: '/product/docs' } } });
+    assert.equal(payload.dispatch.url, '/index.docs.html');
+  });
+});
